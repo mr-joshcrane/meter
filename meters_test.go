@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"io"
 	"meter"
+	"os"
 	"testing"
 	"time"
 
@@ -24,27 +25,68 @@ func TestCostCalculatesTotalCostOfMeetingGivenHourlyRateAndDuration(t *testing.T
 
 func TestParseFlagsParsesHourlyRateAndMeetingDuration(t *testing.T) {
 	t.Parallel()
-	args := []string{"-rate=60", "-duration=1h", "-ticks=60s"}
-	rate, duration, ticks := meter.ParseFlags(args)
-	if !cmp.Equal(rate, 60.0) {
-		t.Error(cmp.Diff(60.0, rate))
+	tt := []struct {
+		got      []string
+		rate     float64
+		duration time.Duration
+		ticks    time.Duration
+	}{
+		{
+			got:      []string{"-rate=60", "-duration=1h", "-ticks=60s"},
+			rate:     60.0,
+			duration: time.Hour,
+			ticks:    time.Minute,
+		},
+		{
+			got:      []string{"-rate=99.50", "-duration=1h", "-ticks=60s"},
+			rate:     99.50,
+			duration: time.Hour,
+			ticks:    time.Minute,
+		},
+		{
+			got:      []string{"-rate=60", "-duration=2.5h", "-ticks=60s"},
+			rate:     60,
+			duration: 150 * time.Minute,
+			ticks:    time.Minute,
+		},
 	}
-	if !cmp.Equal(duration, time.Hour) {
-		t.Error(cmp.Diff(time.Hour, duration))
+
+	for _, tc := range tt {
+		f, err := meter.ParseFlags(tc.got)
+		if err != nil {
+			t.Fatalf("did not expect parsing error, but got %v", err)
+		}
+		if !cmp.Equal(f.HourlyRate, tc.rate) {
+			t.Error(cmp.Diff(tc.rate, f.HourlyRate))
+		}
+		if !cmp.Equal(f.MeetingDuration, tc.duration) {
+			t.Error(cmp.Diff(tc.duration, f.MeetingDuration))
+		}
+		if !cmp.Equal(f.Ticks, tc.ticks) {
+			t.Error(cmp.Diff(tc.ticks, f.Ticks))
+		}
 	}
-	if !cmp.Equal(ticks, time.Minute) {
-		t.Error(cmp.Diff(time.Minute, ticks))
+}
+
+func TestParsingErrorsShouldDisplayHelpMessageToUser(t *testing.T) {
+	t.Parallel()
+	os.Stderr = nil
+	_, err := meter.ParseFlags([]string{"-rate=60", "-duration=3s", "-ticks=10"})
+	if err == nil {
+		t.Fatalf("expected parsing error, but got %v", err)
 	}
 }
 
 func TestMeetingThreeSecondsLongWithOneSecondTickOutputsThreeLines(t *testing.T) {
 	t.Parallel()
-	rate := 10000.0
-	duration := 3 * time.Second
-	ticks := time.Second
+	f := meter.Flags{
+		HourlyRate:      10000.0,
+		MeetingDuration: 3 * time.Second,
+		Ticks:           time.Second,
+	}
 	want := "The total current cost of this meeting is $2.78\nThe total current cost of this meeting is $5.56\nThe total current cost of this meeting is $8.34\n"
 	output := &bytes.Buffer{}
-	meter.NewMeeting(rate, duration, ticks, output)
+	meter.NewMeeting(f, output)
 	b, err := io.ReadAll(output)
 	if err != nil {
 		t.Fatal(err)
