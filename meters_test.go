@@ -96,3 +96,41 @@ func TestMeetingThreeSecondsLongWithOneSecondTickOutputsThreeLines(t *testing.T)
 		t.Fatalf(cmp.Diff(want, got))
 	}
 }
+
+func TestIfTicksIsSpecifiedApplicationReturnsTicker(t *testing.T) {
+	t.Parallel()
+	f, err := meter.ParseFlags([]string{"-rate=60", "-duration=1s", "-ticks=1s"})
+	if err != nil {
+		t.Fatalf("did not expect parsing error, but got %v", err)
+	}
+	output := &bytes.Buffer{}
+	meter.RunCLI(f, output)
+	b, err := io.ReadAll(output)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := "The total current cost of this meeting is $0.02\n"
+	got := string(b)
+	if !cmp.Equal(want, got) {
+		t.Fatalf(cmp.Diff(want, got))
+	}
+}
+
+func TestIfTicksUnspecifiedApplicationReturnsCost(t *testing.T) {
+	t.Parallel()
+	f, err := meter.ParseFlags([]string{"-rate=60", "-duration=1h"})
+	if err != nil {
+		t.Fatalf("did not expect parsing error, but got %v", err)
+	}
+	output := &bytes.Buffer{}
+	meter.RunCLI(f, output)
+	b, err := io.ReadAll(output)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := string(b)
+	want := "The total current cost of this meeting is $60.00\n"
+	if !cmp.Equal(want, got) {
+		t.Fatalf(cmp.Diff(want, got))
+	}
+}

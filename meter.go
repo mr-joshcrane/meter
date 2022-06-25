@@ -23,7 +23,7 @@ func ParseFlags(args []string) (Flags, error) {
 	flagSet := flag.NewFlagSet("flagset", flag.ContinueOnError)
 	hourlyRate := flagSet.Float64("rate", 0.0, "the charge out rate in some unit of time")
 	meetingDuration := flagSet.Duration("duration", 0.0, "the duration to charge for")
-	ticks := flagSet.Duration("ticks", 5*time.Second, "displays the output every tick rate")
+	ticks := flagSet.Duration("ticks", 0.0, "displays the output every tick rate")
 	err := flagSet.Parse(args)
 	if err != nil {
 		return Flags{}, err
@@ -31,7 +31,7 @@ func ParseFlags(args []string) (Flags, error) {
 	return Flags{*hourlyRate, *meetingDuration, *ticks}, nil
 }
 
-func NewMeeting(f Flags, output io.Writer) {
+func NewMeeting(f Flags, w io.Writer) {
 	now := time.Now()
 	ticker := time.NewTicker(f.Ticks)
 	done := make(chan (bool))
@@ -43,7 +43,7 @@ func NewMeeting(f Flags, output io.Writer) {
 			case t := <-ticker.C:
 				d := t.Sub(now)
 				runningCost := Cost(f.HourlyRate, d)
-				DisplayRunningCost(runningCost, output)
+				DisplayCost(runningCost, w)
 			}
 		}
 	}()
@@ -52,7 +52,16 @@ func NewMeeting(f Flags, output io.Writer) {
 	done <- true
 }
 
-func DisplayRunningCost(cost float64, output io.Writer) {
+func DisplayCost(cost float64, w io.Writer) {
 	runningCost := fmt.Sprintf("The total current cost of this meeting is $%.2f", cost)
-	fmt.Fprintln(output, runningCost)
+	fmt.Fprintln(w, runningCost)
+}
+
+func RunCLI(f Flags, w io.Writer) {
+	if f.Ticks > 0 {
+		NewMeeting(f, w)
+	} else {
+		cost := Cost(f.HourlyRate, f.MeetingDuration)
+		DisplayCost(cost, w)
+	}
 }
