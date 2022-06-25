@@ -1,16 +1,28 @@
-# Meter2 
+# Meter
 
-### Input
+Meetings can be boring and expensive. **Meter** can't measure participant boredom, but it can measure how expensive a given meeting is! You can use **Meter**:
+___
+### For Simple Cost Estimation
+Handy for calculating the total cost of spending time on x activity given an hourly rate!
 ```bash
-meter -rate=60 -duration=1
-60
+meter -rate=100 -duration=1h
+The total current cost of this meeting is $ 100.00
 ```
+___
+### As A Running Cost Counter
+Handy for keeping an eye on the mounting costs of the meeting, so you can trade it off against the value being generated!
+```bash
+meter -rate=10000 -duration=1h -ticks=5s
 
+The total current cost of this meeting is $ 13.89
+The total current cost of this meeting is $ 27.78
+The total current cost of this meeting is $ 41.67
+... <one hour later> ...
+The total current cost of this meeting is $ 10000.00
+```
+---
 
-TODO: Fair enough. How about you refactor this project, give it a little polish, write the doc comments for pkg.go.dev, finish the README, and share it in #go, and then work on adding multiple participants, for example :slightly_smiling_face:
-
-1. Refactor this project
-2. Polish
-3. Write the doc comments for pkg.go.dev
-4. Finish the readme
-5. Share it in go
+From the root of the project, you can **build** the executable with
+``` bash
+go build -o meter cmd/main.go
+```
