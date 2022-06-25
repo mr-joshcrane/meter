@@ -21,9 +21,9 @@ func Cost(hourlyRate float64, duration time.Duration) float64 {
 
 func ParseFlags(args []string) (Flags, error) {
 	flagSet := flag.NewFlagSet("flagset", flag.ContinueOnError)
-	hourlyRate := flagSet.Float64("rate", 0.0, "the charge out rate in some unit of time")
-	meetingDuration := flagSet.Duration("duration", 0.0, "the duration to charge for")
-	ticks := flagSet.Duration("ticks", 0.0, "displays the output every tick rate")
+	hourlyRate := flagSet.Float64("rate", 0.0, "The hourly charge out rate per hour.\nExamples:\n    -rate=100 OR -rate=9.95")
+	meetingDuration := flagSet.Duration("duration", 0.0, "The expected meeting duration\nExamples:\n    -duration=1h OR -duration=150m")
+	ticks := flagSet.Duration("ticks", 0.0, "Optional: starts a ticking timer that displays the running cost\nExamples:\n    -ticks=2s OR -ticks=5m")
 	err := flagSet.Parse(args)
 	if err != nil {
 		return Flags{}, err
