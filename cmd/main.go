@@ -1,13 +1,11 @@
 package main
 
 import (
-	"fmt"
 	"meter"
 	"os"
 )
 
 func main() {
-	rate, duration, _ := meter.ParseFlags(os.Args[1:])
-	fmt.Println(meter.Cost(rate, duration))
-	// meter2.NewMeeting(rate, duration, ticks, os.Stdout)
+	rate, duration, ticks := meter.ParseFlags(os.Args[1:])
+	meter.NewMeeting(rate, duration, ticks, os.Stdout)
 }
