@@ -137,3 +137,25 @@ func TestIfTicksUnspecifiedApplicationReturnsCost(t *testing.T) {
 		t.Fatalf(cmp.Diff(want, got))
 	}
 }
+
+
+func TestIfCostFlagNotProvidedCostCalculatedFromUserInput(t *testing.T) {
+	t.Parallel()
+	f, err := meter.ParseFlags([]string{"-duration=1h"})
+	if err != nil {
+		t.Fatalf("did not expect parsing error, but got %v", err)
+	}
+	output := &bytes.Buffer{}
+	input := bytes.NewBufferString("100\n200\n300\n\n")
+	m := meter.NewMeeting(f, meter.WithOutput(output), meter.WithInput(input))
+	meter.RunCLI(m)
+	b, err := io.ReadAll(output)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := string(b)
+	want := "The total current cost of this meeting is $600.00\n"
+	if !cmp.Equal(want, got) {
+		t.Fatalf(cmp.Diff(want, got))
+	}
+}
