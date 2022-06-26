@@ -86,7 +86,8 @@ func TestMeetingThreeSecondsLongWithOneSecondTickOutputsThreeLines(t *testing.T)
 	}
 	want := "The total current cost of this meeting is $2.78\nThe total current cost of this meeting is $5.56\nThe total current cost of this meeting is $8.34\n"
 	output := &bytes.Buffer{}
-	meter.NewMeeting(f, output)
+	m := meter.NewMeeting(f, meter.WithOutput(output))
+	m.Timer()
 	b, err := io.ReadAll(output)
 	if err != nil {
 		t.Fatal(err)
@@ -104,7 +105,8 @@ func TestIfTicksIsSpecifiedApplicationReturnsTicker(t *testing.T) {
 		t.Fatalf("did not expect parsing error, but got %v", err)
 	}
 	output := &bytes.Buffer{}
-	meter.RunCLI(f, output)
+	m := meter.NewMeeting(f, meter.WithOutput(output))
+	meter.RunCLI(m)
 	b, err := io.ReadAll(output)
 	if err != nil {
 		t.Fatal(err)
@@ -123,7 +125,8 @@ func TestIfTicksUnspecifiedApplicationReturnsCost(t *testing.T) {
 		t.Fatalf("did not expect parsing error, but got %v", err)
 	}
 	output := &bytes.Buffer{}
-	meter.RunCLI(f, output)
+	m := meter.NewMeeting(f, meter.WithOutput(output))
+	meter.RunCLI(m)
 	b, err := io.ReadAll(output)
 	if err != nil {
 		t.Fatal(err)

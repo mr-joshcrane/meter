@@ -10,5 +10,6 @@ func main() {
 	if err != nil {
 		os.Exit(1)
 	}
-	meter.RunCLI(f, os.Stdout)
+	m := meter.NewMeeting(f)
+	meter.RunCLI(m)
 }

@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"os"
 	"time"
 )
 
@@ -13,6 +14,40 @@ type Flags struct {
 	Ticks           time.Duration
 }
 
+type Meeting struct {
+	r io.Reader
+	w io.Writer
+	f Flags
+}
+
+type MeetingOpt func(m *Meeting) *Meeting
+
+func WithInput(r io.Reader) MeetingOpt {
+	return func(m *Meeting) *Meeting {
+		m.r = r
+		return m
+	}
+}
+
+func WithOutput(w io.Writer) MeetingOpt {
+	return func(m *Meeting) *Meeting {
+		m.w = w
+		return m
+	}
+} 
+
+func NewMeeting(f Flags, opts ...MeetingOpt) *Meeting {
+	m := &Meeting{
+		r: os.Stdin,
+		w: os.Stdout,
+		f: f,
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m 
+}
+
 // Given an hourly rate and a duration, calculates the resultant cost
 // Durations shorter than one second will return a cost of 0
 func Cost(hourlyRate float64, duration time.Duration) float64 {
@@ -20,6 +55,7 @@ func Cost(hourlyRate float64, duration time.Duration) float64 {
 	ratePerSecond := hourlyRate / 60 / 60
 	return ratePerSecond * durationSec
 }
+
 // Parse flags parses user input, displaying hints to the user on arg requirements if parsing fails
 func ParseFlags(args []string) (Flags, error) {
 	flagSet := flag.NewFlagSet("flagset", flag.ContinueOnError)
@@ -33,10 +69,10 @@ func ParseFlags(args []string) (Flags, error) {
 	return Flags{*hourlyRate, *meetingDuration, *ticks}, nil
 }
 
-// NewMeeting creates a rolling ticker that will display the running costs of the current meeting to the user
-func NewMeeting(f Flags, w io.Writer) {
+// Timer creates a rolling ticker that will display the running costs of the current meeting to the user
+func (m *Meeting) Timer() {
 	now := time.Now()
-	ticker := time.NewTicker(f.Ticks)
+	ticker := time.NewTicker(m.f.Ticks)
 	done := make(chan (bool))
 	go func() {
 		for {
@@ -45,12 +81,12 @@ func NewMeeting(f Flags, w io.Writer) {
 				return
 			case t := <-ticker.C:
 				d := t.Sub(now)
-				runningCost := Cost(f.HourlyRate, d)
-				DisplayCost(runningCost, w)
+				runningCost := Cost(m.f.HourlyRate, d)
+				DisplayCost(runningCost, m.w)
 			}
 		}
 	}()
-	time.Sleep(f.MeetingDuration)
+	time.Sleep(m.f.MeetingDuration)
 	ticker.Stop()
 	done <- true
 }
@@ -64,11 +100,11 @@ func DisplayCost(cost float64, w io.Writer) {
 // RunCLI reacts to different flag combinations to modify application behaviour
 // Application can run as a ticker is "ticks" flag is passed
 // Application can be run as an instant cost projection otherwise
-func RunCLI(f Flags, w io.Writer) {
-	if f.Ticks > 0 {
-		NewMeeting(f, w)
+func RunCLI(m *Meeting) {
+	if m.f.Ticks > time.Second {
+		m.Timer()
 	} else {
-		cost := Cost(f.HourlyRate, f.MeetingDuration)
-		DisplayCost(cost, w)
+		cost := Cost(m.f.HourlyRate, m.f.MeetingDuration)
+		DisplayCost(cost, m.w)
 	}
 }
