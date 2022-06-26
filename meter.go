@@ -1,10 +1,12 @@
 package meter
 
 import (
+	"bufio"
 	"flag"
 	"fmt"
 	"io"
 	"os"
+	"strconv"
 	"time"
 )
 
@@ -34,7 +36,7 @@ func WithOutput(w io.Writer) MeetingOpt {
 		m.w = w
 		return m
 	}
-} 
+}
 
 func NewMeeting(f Flags, opts ...MeetingOpt) *Meeting {
 	m := &Meeting{
@@ -45,7 +47,7 @@ func NewMeeting(f Flags, opts ...MeetingOpt) *Meeting {
 	for _, opt := range opts {
 		opt(m)
 	}
-	return m 
+	return m
 }
 
 // Given an hourly rate and a duration, calculates the resultant cost
@@ -54,6 +56,29 @@ func Cost(hourlyRate float64, duration time.Duration) float64 {
 	durationSec := duration.Seconds()
 	ratePerSecond := hourlyRate / 60 / 60
 	return ratePerSecond * durationSec
+}
+
+func (m *Meeting) GetRate() float64 {
+	var rate float64
+	scanner := bufio.NewScanner(m.r)
+	fmt.Fprintf(m.w, "Please enter the hourly rates of all participants, one at a time. ie. 150 OR 1000.50\n")
+	for {
+		line := ""
+		fmt.Fprintf(m.w, "Please enter the hourly rates of the next participant\n")
+		fmt.Fprintf(m.w, "If all meeting participants accounted for, type Q and enter to move on.\n")
+		scanner.Scan()
+		line = scanner.Text()
+		if line == "q" || line == "Q" {
+			break
+		}
+		f, err := strconv.ParseFloat(line, 64)
+		if err != nil {
+			fmt.Fprintf(m.w, "Sorry, didn't understand %s. Please try again.\n", line)
+			continue
+		}
+		rate += f
+	}
+	return rate
 }
 
 // Parse flags parses user input, displaying hints to the user on arg requirements if parsing fails
@@ -101,6 +126,9 @@ func DisplayCost(cost float64, w io.Writer) {
 // Application can run as a ticker is "ticks" flag is passed
 // Application can be run as an instant cost projection otherwise
 func RunCLI(m *Meeting) {
+	if m.f.HourlyRate == 0 {
+		m.f.HourlyRate = m.GetRate()
+	}
 	if m.f.Ticks > time.Second {
 		m.Timer()
 	} else {
