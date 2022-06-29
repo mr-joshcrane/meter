@@ -69,7 +69,7 @@ func TestParseFlagsParsesHourlyRateAndMeetingDuration(t *testing.T) {
 	}
 }
 
-func TestParsingErrorsShouldDisplayHelpMessageToUser(t *testing.T) {
+func TestParsingErrorsDisplaysHelpMessageToUser(t *testing.T) {
 	t.Parallel()
 	os.Stderr = nil
 	_, err := meter.ParseFlags([]string{"-rate=60", "-duration=3s", "-ticks=10"})
