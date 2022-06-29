@@ -81,11 +81,11 @@ func TestParsingErrorsDisplaysHelpMessageToUser(t *testing.T) {
 func TestMeetingThreeSecondsLongWithOneSecondTickGivesThreeTicksOfOutput(t *testing.T) {
 	t.Parallel()
 	f := meter.Flags{
-		HourlyRate:      10000.0,
+		HourlyRate:      100.0,
 		MeetingDuration: 3 * time.Second,
 		Ticks:           time.Second,
 	}
-	want := "\rThe total current cost of this meeting is $2.78\rThe total current cost of this meeting is $5.56\rThe total current cost of this meeting is $8.34"
+	want := "\rThe total current cost of this meeting is $0.03\rThe total current cost of this meeting is $0.06\rThe total current cost of this meeting is $0.08"
 	output := &bytes.Buffer{}
 	m := meter.NewMeeting(f, meter.WithOutput(output))
 	m.Timer()
@@ -159,4 +159,10 @@ func TestIfCostFlagNotProvidedCostCalculatedFromUserInput(t *testing.T) {
 	if !cmp.Equal(want, got) {
 		t.Fatalf(cmp.Diff(want, got))
 	}
+}
+
+//Action Condition Expectation
+
+func TestCallingApplicationWithNoDurationStartsAUserTerminatedTicker(t *testing.T) {
+	t.Parallel()
 }
