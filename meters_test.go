@@ -78,7 +78,7 @@ func TestParsingErrorsShouldDisplayHelpMessageToUser(t *testing.T) {
 	}
 }
 
-func TestMeetingThreeSecondsLongWithOneSecondTickOutputsThreeLines(t *testing.T) {
+func TestMeetingThreeSecondsLongWithOneSecondTickGivesThreeTicksOfOutput(t *testing.T) {
 	t.Parallel()
 	f := meter.Flags{
 		HourlyRate:      10000.0,
