@@ -2,6 +2,16 @@
 
 Meetings can be boring and expensive. **Meter** can't measure participant boredom, but it can measure how expensive a given meeting is! You can use **Meter**:
 ___
+### To install locally, clone the repository and from the root of the directory run:
+```bash
+go install cmd/meter.go
+```
+Assuming you're on Linux or a Mac, you can then run the binary with
+```bash
+meter
+```
+
+___
 ### For Simple Cost Estimation
 Handy for calculating the total cost of spending time on x activity given an hourly rate!
 ```bash
