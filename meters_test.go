@@ -139,7 +139,6 @@ func TestIfTicksUnspecifiedApplicationReturnsCost(t *testing.T) {
 	}
 }
 
-
 func TestIfCostFlagNotProvidedCostCalculatedFromUserInput(t *testing.T) {
 	t.Parallel()
 	f, err := meter.ParseFlags([]string{"-duration=1h"})
