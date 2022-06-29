@@ -1,4 +1,4 @@
-module meter
+module github.com/mr-joshcrane/meter
 
 go 1.18
 

@@ -3,7 +3,7 @@ package meter_test
 import (
 	"bytes"
 	"io"
-	"meter"
+	"github.com/mr-joshcrane/meter"
 	"os"
 	"strings"
 	"testing"

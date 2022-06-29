@@ -1,7 +1,7 @@
 package main
 
 import (
-	"meter"
+	"github.com/mr-joshcrane/meter"
 	"os"
 )
 
