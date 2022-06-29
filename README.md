@@ -2,10 +2,16 @@
 
 Meetings can be boring and expensive. **Meter** can't measure participant boredom, but it can measure how expensive a given meeting is! You can use **Meter**:
 ___
-### To install locally, clone the repository and from the root of the directory run:
+### Installation
+To install locally, clone the repository and from the root of the directory run:
 ```bash
 go install cmd/meter.go
 ```
+Alternatively, to skip cloning and install straight from Github
+```bash
+go install github.com/mr-joshcrane/meter/cmd/meter@latest
+```
+
 Assuming you're on Linux or a Mac, you can then run the binary with
 ```bash
 meter
