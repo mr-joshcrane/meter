@@ -118,8 +118,8 @@ func (m *Meeting) Timer() {
 
 // DisplayCost displays running costs to the user
 func DisplayCost(cost float64, w io.Writer) {
-	runningCost := fmt.Sprintf("The total current cost of this meeting is $%.2f", cost)
-	fmt.Fprintln(w, runningCost)
+	runningCost := fmt.Sprintf("\rThe total current cost of this meeting is $%.2f", cost)
+	fmt.Fprint(w, runningCost)
 }
 
 // RunCLI reacts to different flag combinations to modify application behaviour
@@ -134,5 +134,6 @@ func RunCLI(m *Meeting) {
 	} else {
 		cost := Cost(m.f.HourlyRate, m.f.MeetingDuration)
 		DisplayCost(cost, m.w)
+		fmt.Fprintln(m.w)
 	}
 }

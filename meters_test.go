@@ -85,7 +85,7 @@ func TestMeetingThreeSecondsLongWithOneSecondTickOutputsThreeLines(t *testing.T)
 		MeetingDuration: 3 * time.Second,
 		Ticks:           time.Second,
 	}
-	want := "The total current cost of this meeting is $2.78\nThe total current cost of this meeting is $5.56\nThe total current cost of this meeting is $8.34\n"
+	want := "\rThe total current cost of this meeting is $2.78\rThe total current cost of this meeting is $5.56\rThe total current cost of this meeting is $8.34"
 	output := &bytes.Buffer{}
 	m := meter.NewMeeting(f, meter.WithOutput(output))
 	m.Timer()
@@ -112,7 +112,7 @@ func TestIfTicksIsSpecifiedApplicationReturnsTicker(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := "The total current cost of this meeting is $0.02\n"
+	want := "\rThe total current cost of this meeting is $0.02\n"
 	got := string(b)
 	if !cmp.Equal(want, got) {
 		t.Fatalf(cmp.Diff(want, got))
@@ -133,7 +133,7 @@ func TestIfTicksUnspecifiedApplicationReturnsCost(t *testing.T) {
 		t.Fatal(err)
 	}
 	got := string(b)
-	want := "The total current cost of this meeting is $60.00\n"
+	want := "\rThe total current cost of this meeting is $60.00\n"
 	if !cmp.Equal(want, got) {
 		t.Fatalf(cmp.Diff(want, got))
 	}
@@ -156,7 +156,7 @@ func TestIfCostFlagNotProvidedCostCalculatedFromUserInput(t *testing.T) {
 	}
 	lines := strings.Split(string(b), "\n")
 	got := lines[len(lines)-2]
-	want := "The total current cost of this meeting is $600.00"
+	want := "\rThe total current cost of this meeting is $600.00"
 	if !cmp.Equal(want, got) {
 		t.Fatalf(cmp.Diff(want, got))
 	}
