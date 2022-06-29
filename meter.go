@@ -84,7 +84,7 @@ func (m *Meeting) GetRate() float64 {
 // Parse flags parses user input, displaying hints to the user on arg requirements if parsing fails
 func ParseFlags(args []string) (Flags, error) {
 	flagSet := flag.NewFlagSet("flagset", flag.ContinueOnError)
-	hourlyRate := flagSet.Float64("rate", 0.0, "Required: The hourly charge out rate per hour.\nExamples:\n    -rate=100 OR -rate=9.95")
+	hourlyRate := flagSet.Float64("rate", 0.0, "Optional: The hourly charge out rate per hour.\nExamples:\n    -rate=100 OR -rate=9.95")
 	meetingDuration := flagSet.Duration("duration", 0.0, "Required: The expected meeting duration\nExamples:\n    -duration=1h OR -duration=150m")
 	ticks := flagSet.Duration("ticks", 0.0, "Optional: starts a ticking timer that displays the running cost\nExamples:\n    -ticks=2s OR -ticks=5m")
 	err := flagSet.Parse(args)

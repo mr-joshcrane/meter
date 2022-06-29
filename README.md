@@ -21,6 +21,15 @@ The total current cost of this meeting is $ 41.67
 The total current cost of this meeting is $ 10000.00
 ```
 ---
+### Getting Participants Rates Interactively
+Don't know off the combined rate of all participants off the top of your head? No problem, just omit the -rate flag and be prompted interactively.
+```bash
+meter -duration=1h
+Please enter the hourly rates of all participants, one at a time. ie. 150 OR 1000.50
+Please enter the hourly rates of the next participant
+If all meeting participants accounted for, type Q and enter to move on.
+```
+___
 
 From the root of the project, you can **build** the executable with
 ``` bash
