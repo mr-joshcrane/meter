@@ -163,6 +163,20 @@ func TestIfCostFlagNotProvidedCostCalculatedFromUserInput(t *testing.T) {
 
 //Action Condition Expectation
 
-func TestCallingApplicationWithNoDurationStartsAUserTerminatedTicker(t *testing.T) {
+func TestTimerCreatedWithNoDurationonlyTerminatesWithUserInput(t *testing.T) {
 	t.Parallel()
+	f, err := meter.ParseFlags([]string{"-rate=100000000"})
+	if err != nil {
+		t.Fatalf("did not expect parsing error, but got %v", err)
+	}
+	input := bytes.NewBufferString("")
+	output := &bytes.Buffer{}
+	m := meter.NewMeeting(f, meter.WithOutput(output), meter.WithInput(input))
+	if m.Finished {
+		t.Fatalf("timer should not have terminated until user input is supplied")
+	}
+	input.WriteString("q\n")
+	if !m.Finished {
+		t.Fatalf("timer should have terminated on user input but did not")
+	}
 }
