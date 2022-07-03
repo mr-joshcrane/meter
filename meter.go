@@ -17,9 +17,9 @@ type Flags struct {
 }
 
 type Meeting struct {
-	r io.Reader
-	w io.Writer
-	f Flags
+	r        io.Reader
+	w        io.Writer
+	f        Flags
 	Finished bool
 }
 
@@ -95,26 +95,50 @@ func ParseFlags(args []string) (Flags, error) {
 	return Flags{*hourlyRate, *meetingDuration, *ticks}, nil
 }
 
+func Timer2(m *Meeting, done chan (bool), ticker *time.Ticker) {
+	now := time.Now()
+	for {
+		select {
+		case <-done:
+			return
+		case t := <-ticker.C:
+			d := t.Sub(now)
+			runningCost := Cost(m.f.HourlyRate, d)
+			DisplayCost(runningCost, m.w)
+		}
+	}
+}
+
+func UserInputStrategy(m *Meeting, done chan (bool), ticker *time.Ticker) {
+	var userInput string
+	for {
+		fmt.Fscan(m.r, &userInput)
+		if userInput == "q" || userInput == "Q" {
+			break
+		}
+	}
+	done <- true
+	ticker.Stop()
+	m.Finished = true
+}
+
+func FixedTimeStrategy(m *Meeting, done chan (bool), ticker *time.Ticker) {
+	time.Sleep(m.f.MeetingDuration)
+	done <- true
+	ticker.Stop()
+	m.Finished = true
+}
+
 // Timer creates a rolling ticker that will display the running costs of the current meeting to the user
 func (m *Meeting) Timer() {
-	now := time.Now()
 	ticker := time.NewTicker(m.f.Ticks)
 	done := make(chan (bool))
-	go func() {
-		for {
-			select {
-			case <-done:
-				return
-			case t := <-ticker.C:
-				d := t.Sub(now)
-				runningCost := Cost(m.f.HourlyRate, d)
-				DisplayCost(runningCost, m.w)
-			}
-		}
-	}()
-	time.Sleep(m.f.MeetingDuration)
-	ticker.Stop()
-	done <- true
+	go Timer2(m, done, ticker)
+	if m.f.MeetingDuration == 0 {
+		go UserInputStrategy(m, done, ticker)
+	} else {
+		go FixedTimeStrategy(m, done, ticker)
+	}
 }
 
 // DisplayCost displays running costs to the user
@@ -130,8 +154,20 @@ func RunCLI(m *Meeting) {
 	if m.f.HourlyRate == 0 {
 		m.f.HourlyRate = m.GetRate()
 	}
+	if m.f.MeetingDuration == 0 {
+		fmt.Fprintln(m.w, "Starting an interactive ticker, press Q and enter to end the meeting")
+		m.Timer()
+		for {
+			if m.Finished {
+				break
+			}
+		}
+		fmt.Fprintln(m.w)
+		os.Exit(0)
+	}
 	if m.f.Ticks > time.Second {
 		m.Timer()
+		os.Exit(0)
 	} else {
 		cost := Cost(m.f.HourlyRate, m.f.MeetingDuration)
 		DisplayCost(cost, m.w)

@@ -2,8 +2,8 @@ package meter_test
 
 import (
 	"bytes"
-	"io"
 	"github.com/mr-joshcrane/meter"
+	"io"
 	"os"
 	"strings"
 	"testing"
@@ -82,13 +82,19 @@ func TestMeetingThreeSecondsLongWithOneSecondTickGivesThreeTicksOfOutput(t *test
 	t.Parallel()
 	f := meter.Flags{
 		HourlyRate:      100.0,
-		MeetingDuration: 3 * time.Second,
+		// Test is a bit flakey if you don't give it wiggleroom which sucks
+		MeetingDuration: 3200 * time.Millisecond,
 		Ticks:           time.Second,
 	}
 	want := "\rThe total current cost of this meeting is $0.03\rThe total current cost of this meeting is $0.06\rThe total current cost of this meeting is $0.08"
 	output := &bytes.Buffer{}
 	m := meter.NewMeeting(f, meter.WithOutput(output))
 	m.Timer()
+	for {
+		if m.Finished {
+			break
+		}
+	}
 	b, err := io.ReadAll(output)
 	if err != nil {
 		t.Fatal(err)
@@ -172,10 +178,12 @@ func TestTimerCreatedWithNoDurationonlyTerminatesWithUserInput(t *testing.T) {
 	input := bytes.NewBufferString("")
 	output := &bytes.Buffer{}
 	m := meter.NewMeeting(f, meter.WithOutput(output), meter.WithInput(input))
+	m.Timer()
 	if m.Finished {
 		t.Fatalf("timer should not have terminated until user input is supplied")
 	}
 	input.WriteString("q\n")
+	time.Sleep(3 * time.Second)
 	if !m.Finished {
 		t.Fatalf("timer should have terminated on user input but did not")
 	}
