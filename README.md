@@ -43,7 +43,14 @@ Don't know off the combined rate of all participants off the top of your head? N
 meter -duration=1h
 Please enter the hourly rates of all participants, one at a time. ie. 150 OR 1000.50
 Please enter the hourly rates of the next participant
-If all meeting participants accounted for, type Q and enter to move on.
+If all meeting participants accounted for, type ! and enter to move on.
+```
+### Endless meetings!
+Sometimes meetings have a bad habit of not ending on time. If you suspect that's the case, just omit the -duration flag to get a running timer you can terminate when it's finally over!
+```bash
+meter -rate 10000
+Starting an interactive ticker, press ! and enter to end the meeting
+The total current cost of this meeting is $ 1.55
 ```
 ___
 
