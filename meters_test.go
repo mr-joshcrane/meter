@@ -81,7 +81,7 @@ func TestParsingErrorsDisplaysHelpMessageToUser(t *testing.T) {
 func TestMeetingThreeSecondsLongWithOneSecondTickGivesThreeTicksOfOutput(t *testing.T) {
 	t.Parallel()
 	f := meter.Flags{
-		HourlyRate:      100.0,
+		HourlyRate: 100.0,
 		// Test is a bit flakey if you don't give it wiggleroom which sucks
 		MeetingDuration: 3200 * time.Millisecond,
 		Ticks:           time.Second,
@@ -152,7 +152,7 @@ func TestIfCostFlagNotProvidedCostCalculatedFromUserInput(t *testing.T) {
 		t.Fatalf("did not expect parsing error, but got %v", err)
 	}
 	output := &bytes.Buffer{}
-	input := bytes.NewBufferString("100\n200\nuser input error!\n300\nq\n")
+	input := bytes.NewBufferString("100\n200\nuser input error!\n300\n!\n")
 	m := meter.NewMeeting(f, meter.WithOutput(output), meter.WithInput(input))
 	meter.RunCLI(m)
 	b, err := io.ReadAll(output)
@@ -182,7 +182,7 @@ func TestTimerCreatedWithNoDurationonlyTerminatesWithUserInput(t *testing.T) {
 	if m.Finished {
 		t.Fatalf("timer should not have terminated until user input is supplied")
 	}
-	input.WriteString("q\n")
+	input.WriteString("!\n")
 	time.Sleep(3 * time.Second)
 	if !m.Finished {
 		t.Fatalf("timer should have terminated on user input but did not")
