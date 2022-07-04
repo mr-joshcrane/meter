@@ -2,8 +2,8 @@ package meter_test
 
 import (
 	"bytes"
-	"io"
 	"github.com/mr-joshcrane/meter"
+	"io"
 	"os"
 	"strings"
 	"testing"
@@ -81,14 +81,20 @@ func TestParsingErrorsDisplaysHelpMessageToUser(t *testing.T) {
 func TestMeetingThreeSecondsLongWithOneSecondTickGivesThreeTicksOfOutput(t *testing.T) {
 	t.Parallel()
 	f := meter.Flags{
-		HourlyRate:      100.0,
-		MeetingDuration: 3 * time.Second,
+		HourlyRate: 100.0,
+		// Test is a bit flakey if you don't give it wiggleroom which sucks
+		MeetingDuration: 3200 * time.Millisecond,
 		Ticks:           time.Second,
 	}
 	want := "\rThe total current cost of this meeting is $0.03\rThe total current cost of this meeting is $0.06\rThe total current cost of this meeting is $0.08"
 	output := &bytes.Buffer{}
 	m := meter.NewMeeting(f, meter.WithOutput(output))
 	m.Timer()
+	for {
+		if m.Finished {
+			break
+		}
+	}
 	b, err := io.ReadAll(output)
 	if err != nil {
 		t.Fatal(err)
@@ -146,7 +152,7 @@ func TestIfCostFlagNotProvidedCostCalculatedFromUserInput(t *testing.T) {
 		t.Fatalf("did not expect parsing error, but got %v", err)
 	}
 	output := &bytes.Buffer{}
-	input := bytes.NewBufferString("100\n200\nuser input error!\n300\nq\n")
+	input := bytes.NewBufferString("100\n200\nuser input error!\n300\n!\n")
 	m := meter.NewMeeting(f, meter.WithOutput(output), meter.WithInput(input))
 	meter.RunCLI(m)
 	b, err := io.ReadAll(output)
@@ -163,6 +169,22 @@ func TestIfCostFlagNotProvidedCostCalculatedFromUserInput(t *testing.T) {
 
 //Action Condition Expectation
 
-func TestCallingApplicationWithNoDurationStartsAUserTerminatedTicker(t *testing.T) {
+func TestTimerCreatedWithNoDurationonlyTerminatesWithUserInput(t *testing.T) {
 	t.Parallel()
+	f, err := meter.ParseFlags([]string{"-rate=100000000"})
+	if err != nil {
+		t.Fatalf("did not expect parsing error, but got %v", err)
+	}
+	input := bytes.NewBufferString("")
+	output := &bytes.Buffer{}
+	m := meter.NewMeeting(f, meter.WithOutput(output), meter.WithInput(input))
+	m.Timer()
+	if m.Finished {
+		t.Fatalf("timer should not have terminated until user input is supplied")
+	}
+	input.WriteString("!\n")
+	time.Sleep(3 * time.Second)
+	if !m.Finished {
+		t.Fatalf("timer should have terminated on user input but did not")
+	}
 }

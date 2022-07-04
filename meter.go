@@ -17,9 +17,10 @@ type Flags struct {
 }
 
 type Meeting struct {
-	r io.Reader
-	w io.Writer
-	f Flags
+	r        io.Reader
+	w        io.Writer
+	f        Flags
+	Finished bool
 }
 
 type MeetingOpt func(m *Meeting) *Meeting
@@ -65,10 +66,10 @@ func (m *Meeting) GetRate() float64 {
 	for {
 		line := ""
 		fmt.Fprintf(m.w, "Please enter the hourly rates of the next participant\n")
-		fmt.Fprintf(m.w, "If all meeting participants accounted for, type Q and enter to move on.\n")
+		fmt.Fprintf(m.w, "If all meeting participants accounted for, type ! and enter to move on.\n")
 		scanner.Scan()
 		line = scanner.Text()
-		if line == "q" || line == "Q" {
+		if line == "!" {
 			break
 		}
 		f, err := strconv.ParseFloat(line, 64)
@@ -86,7 +87,7 @@ func ParseFlags(args []string) (Flags, error) {
 	flagSet := flag.NewFlagSet("flagset", flag.ContinueOnError)
 	hourlyRate := flagSet.Float64("rate", 0.0, "Optional: The hourly charge out rate per hour.\nExamples:\n    -rate=100 OR -rate=9.95")
 	meetingDuration := flagSet.Duration("duration", 0.0, "Required: The expected meeting duration\nExamples:\n    -duration=1h OR -duration=150m")
-	ticks := flagSet.Duration("ticks", 0.0, "Optional: starts a ticking timer that displays the running cost\nExamples:\n    -ticks=2s OR -ticks=5m")
+	ticks := flagSet.Duration("ticks", time.Second, "Optional: starts a ticking timer that displays the running cost\nExamples:\n    -ticks=2s OR -ticks=5m")
 	err := flagSet.Parse(args)
 	if err != nil {
 		return Flags{}, err
@@ -94,32 +95,66 @@ func ParseFlags(args []string) (Flags, error) {
 	return Flags{*hourlyRate, *meetingDuration, *ticks}, nil
 }
 
+func costTicker(m *Meeting, done chan (bool), ticker *time.Ticker) {
+	now := time.Now()
+	for {
+		select {
+		case <-done:
+			return
+		case t := <-ticker.C:
+			d := t.Sub(now)
+			runningCost := Cost(m.f.HourlyRate, d)
+			DisplayCost(runningCost, m.w)
+		}
+	}
+}
+
+func userInputStrategy(m *Meeting, done chan (bool), ticker *time.Ticker) {
+	var userInput string
+	for {
+		fmt.Fscan(m.r, &userInput)
+		if userInput == "!" {
+			break
+		}
+	}
+	done <- true
+	ticker.Stop()
+	m.Finished = true
+}
+
+func fixedTimeStrategy(m *Meeting, done chan (bool), ticker *time.Ticker) {
+	time.Sleep(m.f.MeetingDuration)
+	done <- true
+	ticker.Stop()
+	m.Finished = true
+}
+
 // Timer creates a rolling ticker that will display the running costs of the current meeting to the user
 func (m *Meeting) Timer() {
-	now := time.Now()
 	ticker := time.NewTicker(m.f.Ticks)
 	done := make(chan (bool))
-	go func() {
-		for {
-			select {
-			case <-done:
-				return
-			case t := <-ticker.C:
-				d := t.Sub(now)
-				runningCost := Cost(m.f.HourlyRate, d)
-				DisplayCost(runningCost, m.w)
-			}
-		}
-	}()
-	time.Sleep(m.f.MeetingDuration)
-	ticker.Stop()
-	done <- true
+	go costTicker(m, done, ticker)
+	if m.f.MeetingDuration == 0 {
+		go userInputStrategy(m, done, ticker)
+	} else {
+		go fixedTimeStrategy(m, done, ticker)
+	}
 }
 
 // DisplayCost displays running costs to the user
 func DisplayCost(cost float64, w io.Writer) {
 	runningCost := fmt.Sprintf("\rThe total current cost of this meeting is $%.2f", cost)
 	fmt.Fprint(w, runningCost)
+}
+
+func (m *Meeting) UserTerminatedTimer() {
+	fmt.Fprintln(m.w, "Starting an interactive ticker, press ! and enter to end the meeting")
+	m.Timer()
+	for {
+		if m.Finished {
+			break
+		}
+	}
 }
 
 // RunCLI reacts to different flag combinations to modify application behaviour
@@ -129,8 +164,13 @@ func RunCLI(m *Meeting) {
 	if m.f.HourlyRate == 0 {
 		m.f.HourlyRate = m.GetRate()
 	}
+	if m.f.MeetingDuration == 0 {
+		m.UserTerminatedTimer()
+		os.Exit(0)
+	}
 	if m.f.Ticks > time.Second {
 		m.Timer()
+		os.Exit(0)
 	} else {
 		cost := Cost(m.f.HourlyRate, m.f.MeetingDuration)
 		DisplayCost(cost, m.w)
