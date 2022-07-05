@@ -1,12 +1,13 @@
 package main
 
 import (
-	"github.com/mr-joshcrane/meter"
 	"os"
+
+	"github.com/mr-joshcrane/meter"
 )
 
 func main() {
-	f, err := meter.ParseFlags(os.Args[1:])
+	f, err := meter.WithFlags(os.Args[1:])
 	if err != nil {
 		os.Exit(1)
 	}
